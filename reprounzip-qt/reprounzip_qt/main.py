@@ -6,8 +6,10 @@ from __future__ import division, print_function, unicode_literals
 
 import argparse
 import locale
+import logging
 import sys
 
+from reprounzip.common import setup_logging
 from reprounzip_qt import __version__
 
 
@@ -31,10 +33,14 @@ def main():
         epilog="Please report issues to reprozip-users@vgc.poly.edu")
     parser.add_argument('--version', action='version',
                         version="reprounzip-qt version %s" % __version__)
+    parser.add_argument('-v', '--verbose', action='count', default=1,
+                        dest='verbosity', help="augments verbosity level")
     parser.add_argument('package', nargs=argparse.OPTIONAL)
     parser.add_argument('--unpacked', action='append', default=[])
 
     args = parser.parse_args()
+
+    setup_logging('REPROUNZIP-QT', args.verbosity)
 
     qt_init()
 
@@ -48,8 +54,11 @@ def main():
                          "directory\n")
         sys.exit(2)
     elif args.package:
+        logging.info("Got package on the command-line: %s", args.package)
         window_args = dict(unpack=dict(package=args.package))
     elif len(args.unpacked) == 1:
+        logging.info("Got unpacked directory on the command-line: %s",
+                     args.unpacked)
         window_args = dict(run=dict(unpacked_directory=args.unpacked[0]),
                            tab=1)
     elif args.unpacked:

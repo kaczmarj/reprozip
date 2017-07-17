@@ -4,6 +4,7 @@
 
 from __future__ import division, print_function, unicode_literals
 
+import logging
 import os
 import platform
 from PyQt4 import QtCore, QtGui
@@ -29,6 +30,7 @@ class Application(QtGui.QApplication):
         rcpath = os.path.expanduser('~/.reprozip')
         rcname = 'rpuzqt-nodefault'
         if os.path.exists(os.path.join(rcpath, rcname)):
+            logging.info("Registering application disabled")
             return
         try:
             proc = subprocess.Popen(['xdg-mime', 'query', 'default',
@@ -38,7 +40,7 @@ class Application(QtGui.QApplication):
             out, err = proc.communicate()
             registered = bool(out.strip())
         except OSError:
-            pass
+            logging.info("xdg-mime call failed, not registering application")
         else:
             if not registered:
                 r = QtGui.QMessageBox.question(
@@ -57,10 +59,12 @@ class Application(QtGui.QApplication):
     def linux_register_default(self, window):
         command = os.path.abspath(sys.argv[0])
         if not os.path.isfile(command):
+            logging.error("Couldn't find argv[0] location!")
             return
         dirname = tempfile.mkdtemp(prefix='reprozip_mime_')
         try:
             # Install x-reprozip mimetype
+            logging.info("Installing application/x-reprozip mimetype for .rpz")
             filename = os.path.join(dirname, 'nyuvida-reprozip.xml')
             with open(filename, 'w') as fp:
                 fp.write('''\
@@ -78,6 +82,7 @@ class Application(QtGui.QApplication):
                                                 '.local/share/mime')])
 
             # Install desktop file
+            logging.info("Installing reprounzip.desktop file")
             app_dir = os.path.join(os.environ['HOME'],
                                    '.local/share/applications')
             if not os.path.exists(app_dir):
@@ -93,6 +98,7 @@ MimeType=application/x-reprozip
             subprocess.check_call(['update-desktop-database', app_dir])
 
             # Install icon
+            logging.info("Copying icon")
             iconpath = os.path.join(os.environ['HOME'],
                                     '.local/share/icons/hicolor')
             icondir = os.path.join(iconpath, '48x48/mimetypes')
@@ -104,6 +110,8 @@ MimeType=application/x-reprozip
                 iconfile,
                 os.path.join(icondir, 'application-x-reprozip.png'))
             subprocess.check_call(['update-icon-caches', iconpath])
+
+            logging.info("Application registered!")
         except (OSError, subprocess.CalledProcessError):
             error_msg(window, "Error setting default application",
                       'error', traceback.format_exc())
