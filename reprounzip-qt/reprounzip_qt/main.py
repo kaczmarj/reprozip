@@ -11,6 +11,7 @@ import sys
 
 from reprounzip.common import setup_logging
 from reprounzip_qt import __version__
+from reprounzip_qt.usage import usage_report, submit_usage_report
 
 
 def qt_init():
@@ -55,21 +56,26 @@ def main():
         sys.exit(2)
     elif args.package:
         logging.info("Got package on the command-line: %s", args.package)
+        usage_report.note(cmdline='package')
         window_args = dict(unpack=dict(package=args.package))
     elif len(args.unpacked) == 1:
         logging.info("Got unpacked directory on the command-line: %s",
                      args.unpacked)
+        usage_report.note(cmdline='directory')
         window_args = dict(run=dict(unpacked_directory=args.unpacked[0]),
                            tab=1)
     elif args.unpacked:
         sys.stderr.write("You may only use --unpacked once\n")
         sys.exit(2)
+    else:
+        usage_report.note(cmdline='empty')
 
     window = ReprounzipUi(**window_args)
     app.set_first_window(window)
     window.setVisible(True)
 
     app.exec_()
+    submit_usage_report()
     sys.exit(0)
 
 

@@ -18,6 +18,7 @@ import reprounzip_qt
 from reprounzip_qt.gui.common import error_msg
 from reprounzip_qt.gui.unpack import UnpackTab
 from reprounzip_qt.gui.run import RunTab
+from reprounzip_qt.usage import usage_report
 
 
 class Application(QtGui.QApplication):
@@ -40,6 +41,7 @@ class Application(QtGui.QApplication):
             out, err = proc.communicate()
             registered = bool(out.strip())
         except OSError:
+            usage_report.note(appregister='fail xdg-mime')
             logging.info("xdg-mime call failed, not registering application")
         else:
             if not registered:
@@ -51,12 +53,14 @@ class Application(QtGui.QApplication):
                 if r == QtGui.QMessageBox.Yes:
                     self.linux_register_default(window)
                 elif r == QtGui.QMessageBox.No:
+                    usage_report.note(appregister='no')
                     if not os.path.exists(rcpath):
                         os.mkdir(rcpath)
                     with open(os.path.join(rcpath, rcname), 'w') as fp:
                         fp.write('1\n')
 
     def linux_register_default(self, window):
+        usage_report.note(appregister='yes')
         command = os.path.abspath(sys.argv[0])
         if not os.path.isfile(command):
             logging.error("Couldn't find argv[0] location!")
@@ -120,6 +124,7 @@ MimeType=application/x-reprozip
 
     def event(self, event):
         if event.type() == QtCore.QEvent.FileOpen:
+            usage_report.note(fileopenevent=True)
             # Create new window for this RPZ
             window = ReprounzipUi(unpack=dict(package=event.file()))
             window.setVisible(True)
